@@ -4,13 +4,27 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 
 const app = express();
-app.use(express.json());
-const server = http.createServer(app);
 
+// ✅ 1. JSON parser
+app.use(express.json());
+
+// ✅ 2. CORS GLOBAL (INI YANG PENTING)
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
+// ✅ 3. HANDLE PREFLIGHT (WAJIB)
+app.options("*", cors());
+
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*"
-  }
+    origin: "*",
+  },
 });
 
 app.get("/", (req, res) => {
