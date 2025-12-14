@@ -18,17 +18,26 @@ let yesCount = 0;
 let noCount = 0;
 let isPollingActive = false;
 
+let votingMode = "free"; // "free" | "single"
+let votedUsers = new Set(); // untuk mode single
+
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
   // ▶️ START = reset & aktifkan polling
   socket.on("start-polling", (data) => {
-    console.log("START polling dari:", data.user);
-    yesCount = 0;
-    noCount = 0;
-    isPollingActive = true;
-    io.emit("polling:reset");
-  });
+  console.log("START polling dari:", data.user, "mode:", data.mode);
+
+  yesCount = 0;
+  noCount = 0;
+  isPollingActive = true;
+
+  votingMode = data.mode || "free"; // default free
+  votedUsers.clear(); // reset anti-spam setiap start
+
+  io.emit("polling:reset");
+});
+
 
   // ⏹ STOP = freeze & nonaktifkan polling
   socket.on("stop-polling", (data) => {
@@ -39,17 +48,24 @@ io.on("connection", (socket) => {
 
   // 🗳 VOTE REAL
   socket.on("polling:vote", (data) => {
-    if (!isPollingActive) return;
+  if (!isPollingActive) return;
 
-    if (data.vote === "yes") yesCount++;
-    if (data.vote === "no") noCount++;
+  // 🛑 Anti-spam mode SINGLE
+  if (votingMode === "single") {
+    if (votedUsers.has(socket.id)) return;
+    votedUsers.add(socket.id);
+  }
 
-    const total = yesCount + noCount;
-    const yesPercent =
-      total === 0 ? 0 : Math.round((yesCount / total) * 100);
+  if (data.vote === "yes") yesCount++;
+  if (data.vote === "no") noCount++;
 
-    io.emit("polling:update", { yesPercent });
-  });
+  const total = yesCount + noCount;
+  const yesPercent =
+    total === 0 ? 0 : Math.round((yesCount / total) * 100);
+
+  io.emit("polling:update", { yesPercent });
+});
+;
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
