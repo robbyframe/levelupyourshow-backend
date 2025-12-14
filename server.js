@@ -17,6 +17,17 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
+// 🔁 RESET saat Start
+socket.on("start-polling", (data) => {
+  console.log("START polling dari:", data.user);
+  io.emit("polling:reset");
+});
+
+// 🧊 FREEZE saat Stop
+socket.on("stop-polling", (data) => {
+  console.log("STOP polling dari:", data.user);
+  io.emit("polling:freeze");
+});
 
   socket.on("start-polling", (data) => {
     console.log("START polling dari:", data.user);
