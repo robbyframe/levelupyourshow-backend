@@ -1,8 +1,10 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const cors = require("cors");
 
 const app = express();
+app.use(express.json());
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -74,6 +76,43 @@ io.on("connection", (socket) => {
 
 
 const PORT = process.env.PORT || 8080;
+// 📥 CHAT MASUK (Zoom / extension / bot)
+app.post("/chat", (req, res) => {
+  const { userId, text } = req.body || {};
+  if (!isPollingActive || !text) {
+    return res.json({ status: "ignored" });
+  }
+
+  const msg = text.trim().toLowerCase();
+
+  let vote = null;
+
+  if (["ya", "yes", "y"].includes(msg)) vote = "yes";
+  if (["tidak", "no", "n"].includes(msg)) vote = "no";
+
+  if (!vote) {
+    return res.json({ status: "not-a-vote" });
+  }
+
+  // 🛑 Anti-spam mode SINGLE
+  if (votingMode === "single") {
+    if (votedUsers.has(userId)) {
+      return res.json({ status: "duplicate" });
+    }
+    votedUsers.add(userId);
+  }
+
+  if (vote === "yes") yesCount++;
+  if (vote === "no") noCount++;
+
+  const total = yesCount + noCount;
+  const yesPercent =
+    total === 0 ? 0 : Math.round((yesCount / total) * 100);
+
+  io.emit("polling:update", { yesPercent });
+
+  res.json({ status: "counted", vote });
+});
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
