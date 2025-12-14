@@ -29,6 +29,13 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
+
+  // 🔥 EVENT TEST UNTUK OVERLAY
+  socket.on("polling:test", (data) => {
+    io.emit("polling:update", {
+      yesPercent: data.yesPercent,
+    });
+  });
 });
 
 
