@@ -18,10 +18,19 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  socket.on("test-vote", (data) => {
-    io.emit("update", data);
+  socket.on("start-polling", (data) => {
+    console.log("START polling dari:", data.user);
+  });
+
+  socket.on("stop-polling", (data) => {
+    console.log("STOP polling dari:", data.user);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
 });
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
